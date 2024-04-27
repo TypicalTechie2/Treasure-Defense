@@ -7,6 +7,8 @@ public class WeaponController : MonoBehaviour
     public TrailRenderer bulletTrail;
     public Transform bulletPos;
     public GameObject bullet;
+    public int damagePerHit;
+    public float bulletSpeedRate;
     // Start is called before the first frame update
     void Start()
     {
