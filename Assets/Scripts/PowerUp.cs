@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PowerUp : MonoBehaviour
 {
-    [SerializeField] private float rotationSpeed = 20f;
+    [SerializeField] private float rotationSpeed = 50f;
 
     private Vector3 originalPosition;
     public float floatHeight = 1.0f; // Height at which the object floats
@@ -45,6 +45,5 @@ public class PowerUp : MonoBehaviour
     private void RotatePowerUp()
     {
         transform.Rotate(Vector3.up * rotationSpeed * Time.deltaTime);
-        particle.Play();
     }
 }

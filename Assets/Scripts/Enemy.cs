@@ -103,7 +103,7 @@ public class Enemy : MonoBehaviour
             Vector3 reactPosition = transform.position - other.transform.position;
             Destroy(other.gameObject);
 
-            StartCoroutine(DetectEnemyHitRoutine(reactPosition));
+            StartCoroutine(DetectEnemyHitRoutine());
         }
 
         if (other.gameObject.tag == "Chest")
@@ -136,16 +136,13 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private IEnumerator DetectEnemyHitRoutine(Vector3 reactPosition)
+    private IEnumerator DetectEnemyHitRoutine()
     {
         if (currentHealth <= 0)
         {
             gameObject.layer = 10;
             enemyAnimation.SetTrigger("isDead");
             enemyNavMesh.enabled = false;
-            reactPosition = reactPosition.normalized;
-            reactPosition += Vector3.up;
-            enemyRB.AddForce(reactPosition * 100, ForceMode.Impulse);
             Destroy(gameObject, 2);
         }
 

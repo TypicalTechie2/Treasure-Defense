@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
+using GLTF.Schema;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class GameManager : MonoBehaviour
 {
+    [SerializeField] private GameObject bossHealthBarImage;
     private PlayerController playerController;
     [SerializeField] private GameObject enemyPrefab;
     [SerializeField] private GameObject playerPowerUpPrefab;
@@ -95,12 +98,25 @@ public class GameManager : MonoBehaviour
             if (boss != null)
             {
                 boss.SetActive(true);
+                bossHealthBarImage.SetActive(true);
+                timerStarted = false;
+                timerText.gameObject.SetActive(false); // Hide timer text for wave 5
+                StartCoroutine(SpawnEnemyWave5());
             }
 
             else
             {
                 Debug.LogWarning("Boss GameObject not found!");
             }
+        }
+    }
+
+    private IEnumerator SpawnEnemyWave5()
+    {
+        while (true)
+        {
+            SpawnEnemy();
+            yield return new WaitForSeconds(3f); // Spawn enemies every 3 seconds for wave 5
         }
     }
 
@@ -210,8 +226,14 @@ public class GameManager : MonoBehaviour
 
             powerUpInstantiated = true;
             Vector3 powerUpPosition = new Vector3(xPos, transform.position.y, zPos);
-            Instantiate(playerPowerUpPrefab, powerUpPosition, Quaternion.identity);
+            GameObject newPowerUp = Instantiate(playerPowerUpPrefab, powerUpPosition, Quaternion.identity);
 
+            ParticleSystem powerUpParticle = newPowerUp.GetComponentInChildren<ParticleSystem>();
+
+            if (powerUpParticle != null)
+            {
+                powerUpParticle.Play();
+            }
 
             yield return new WaitForSeconds(10f);
 

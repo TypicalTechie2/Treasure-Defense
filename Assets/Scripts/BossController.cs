@@ -7,21 +7,23 @@ using UnityEngine.UIElements;
 public class BossController : MonoBehaviour
 {
     private GameObject bossWeapon;
+    [SerializeField] private ParticleSystem hitImpact;
     [SerializeField] private ParticleSystem deathEffect;
     [SerializeField] private GameObject bossWeaponPrefab; // Reference to the boss weapon prefab
     [SerializeField] private Transform bossWeaponSpawnPoint; // Spawn point for the boss weapon
     private PlayerController playerController;
+    [SerializeField] private HealthBar healthBar;
     [SerializeField] private Transform player;
     [SerializeField] private Transform playerCameraTransform;
     private NavMeshAgent bossNavMesh;
     private Animator bossAnimation;
     private AnimatorStateInfo currentAnimationState;
-    private Rigidbody[] bossRB;
-    private bool isChasing = true;
+    private Rigidbody bossRB;
     private bool isAttacking = false;
     private bool hasSpawnedLavalBall;
     private bool waitForNextAttack = false;
-    [SerializeField] private int bossHealth = 20;
+    private int maxHealth = 1000;
+    [SerializeField] private int currentHealth = 1000;
     [SerializeField] private float cameraMoveDuration = 1f;
     private float timeSinceLastAttack = 0f;
     [SerializeField] private float timeBetweenAttacks = 5f;
@@ -30,15 +32,15 @@ public class BossController : MonoBehaviour
     {
         bossAnimation = GetComponent<Animator>();
         bossNavMesh = GetComponent<NavMeshAgent>();
-        bossRB = GetComponentsInChildren<Rigidbody>();
+        bossRB = GetComponent<Rigidbody>();
         playerController = GameObject.Find("Player").GetComponent<PlayerController>();
 
     }
     // Start is called before the first frame update
     void Start()
     {
-
-
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
     }
 
     // Update is called once per frame
@@ -50,13 +52,11 @@ public class BossController : MonoBehaviour
 
     private void FreezeBossVelocity()
     {
-        if (isChasing && bossRB != null)
+        if (bossRB != null)
         {
-            foreach (Rigidbody rb in bossRB)
-            {
-                rb.velocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
+            bossRB.velocity = Vector3.zero;
+            bossRB.angularVelocity = Vector3.zero;
+
         }
     }
 
@@ -98,6 +98,8 @@ public class BossController : MonoBehaviour
                     // Idle for a certain duration after attacking
                     bossAnimation.SetBool("isWalking", false);
                     bossAnimation.SetBool("isAttacking", false);
+
+                    LookTowardsPlayer();
                 }
             }
             else if (distanceToPlayer > bossNavMesh.stoppingDistance)
@@ -146,7 +148,7 @@ public class BossController : MonoBehaviour
 
         hasSpawnedLavalBall = true;
 
-        yield return new WaitForSeconds(5);
+        yield return new WaitForSeconds(3);
 
         bossAnimation.SetBool("isAttacking", false);
         waitForNextAttack = true;
@@ -181,7 +183,10 @@ public class BossController : MonoBehaviour
         {
             Bullet playerBullet = other.GetComponent<Bullet>();
 
-            bossHealth -= playerBullet.damagePerHit;
+            currentHealth -= playerBullet.damagePerHit;
+            hitImpact.Play();
+
+            healthBar.SetHealth(currentHealth);
 
             StartCoroutine(BossHitDetect());
         }
@@ -189,18 +194,28 @@ public class BossController : MonoBehaviour
 
     private IEnumerator InstantiateBossWeapon()
     {
-        yield return new WaitForSeconds(1.8f);
+        if (playerController.isGameActive)
+        {
+            yield return new WaitForSeconds(1.8f);
 
-        // Instantiate boss weapon at bossWeaponSpawnPoint position with appropriate rotation
-        bossWeapon = Instantiate(bossWeaponPrefab, bossWeaponSpawnPoint.position, Quaternion.identity);
-        // Ensure the boss weapon follows the boss rotation
-        bossWeapon.transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
+            // Instantiate boss weapon at bossWeaponSpawnPoint position with appropriate rotation
+            bossWeapon = Instantiate(bossWeaponPrefab, bossWeaponSpawnPoint.position, Quaternion.identity);
+            // Ensure the boss weapon follows the boss rotation
+            bossWeapon.transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
+        }
+
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
     private IEnumerator BossHitDetect()
     {
-        if (bossHealth <= 0)
+        if (currentHealth <= 0)
         {
+            playerController.isGameActive = false;
+
             StartCoroutine(MovePlayerCameraToBoss());
 
             bossAnimation.SetTrigger("isDead");
@@ -208,7 +223,6 @@ public class BossController : MonoBehaviour
             bossAnimation.SetBool("isAttacking", false);
             bossNavMesh.enabled = false;
             gameObject.layer = 10;
-            playerController.isGameActive = false;
             Destroy(bossWeapon);
 
             yield return new WaitForSeconds(3.5f);

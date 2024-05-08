@@ -9,13 +9,15 @@ public class PlayerController : MonoBehaviour
     private Rigidbody playerRB;
     private MeshRenderer[] playerMesh;
     private WeaponController weaponController;
+    [SerializeField] private HealthBar healthBar;
     private ChestManager chestManager;
     private float horizontaInput;
     private float verticalInput;
     private float fireDelay;
     private float boundaryLimit = 70f;
     [SerializeField] float moveSpeed = 12f;
-    [SerializeField] private int playerHealth = 40;
+    [SerializeField] private int maxHealth = 100;
+    [SerializeField] private int currentHealth;
     private Vector3 moveVector;
     private Vector3 dodgeVector;
     private Animator playerAnimation;
@@ -23,7 +25,6 @@ public class PlayerController : MonoBehaviour
     private bool isDodge;
     private bool fireButton;
     private bool isFireReady;
-    private bool isColliding;
     private bool isHit;
     public bool isGameActive = true;
     public bool isGameOver = false;
@@ -44,7 +45,8 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+        currentHealth = maxHealth;
+        healthBar.SetMaxHealth(maxHealth);
     }
 
     // Update is called once per frame
@@ -97,34 +99,32 @@ public class PlayerController : MonoBehaviour
         {
             moveVector = new Vector3(horizontaInput, 0, verticalInput).normalized;
 
-            if (!isColliding)
+            if (isDodge)
+                moveVector = dodgeVector;
+
+            if (!isFireReady)
             {
-                if (isDodge)
-                    moveVector = dodgeVector;
-
-                if (!isFireReady)
-                {
-                    moveVector = Vector3.zero;
-                }
-
-                transform.position += moveVector * moveSpeed * Time.deltaTime;
-
-                if (Input.GetMouseButton(0))
-                {
-                    // Get the position of the mouse click in the world space
-                    Vector3 mousePosition = Input.mousePosition;
-                    mousePosition.z = Camera.main.transform.position.y - transform.position.y;
-                    Vector3 targetPosition = Camera.main.ScreenToWorldPoint(mousePosition);
-
-                    // Calculate the direction vector from player to target position
-                    Vector3 direction = (targetPosition - transform.position).normalized;
-
-                    // Calculate the rotation only around the y-axis and set it directly
-                    transform.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
-                }
-
-                playerAnimation.SetBool("isRunning", moveVector != Vector3.zero);
+                moveVector = Vector3.zero;
             }
+
+            transform.position += moveVector * moveSpeed * Time.deltaTime;
+
+            if (Input.GetMouseButton(0))
+            {
+                // Get the position of the mouse click in the world space
+                Vector3 mousePosition = Input.mousePosition;
+                mousePosition.z = Camera.main.transform.position.y - transform.position.y;
+                Vector3 targetPosition = Camera.main.ScreenToWorldPoint(mousePosition);
+
+                // Calculate the direction vector from player to target position
+                Vector3 direction = (targetPosition - transform.position).normalized;
+
+                // Calculate the rotation only around the y-axis and set it directly
+                transform.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+            }
+
+            playerAnimation.SetBool("isRunning", moveVector != Vector3.zero);
+
         }
     }
 
@@ -143,7 +143,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.gameObject.CompareTag("Enemy") && playerHealth > 0)
+        if (other.gameObject.CompareTag("Enemy") && currentHealth > 0)
         {
             Enemy enemy = other.gameObject.GetComponent<Enemy>();
 
@@ -151,7 +151,8 @@ public class PlayerController : MonoBehaviour
             if (!hitEnemies.Contains(enemy))
             {
                 // Apply damage to the player
-                playerHealth -= enemy.damagePerHit;
+                currentHealth -= enemy.damagePerHit;
+                healthBar.SetHealth(currentHealth);
 
                 // Optionally, provide visual feedback here
                 StartCoroutine(PlayerDamage());
@@ -164,7 +165,7 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Enemy Bullet") && playerHealth > 0)
+        if (other.gameObject.CompareTag("Enemy Bullet") && currentHealth > 0)
         {
             hitImpact.Play();
 
@@ -172,12 +173,12 @@ public class PlayerController : MonoBehaviour
 
             if (!hasPowerUp)
             {
-                playerHealth -= bossWeapon.damagePerHit;
+                currentHealth -= bossWeapon.damagePerHit;
             }
 
             Destroy(other.gameObject);
 
-            if (playerHealth <= 0)
+            if (currentHealth <= 0)
             {
                 PlayerDeath();
             }
@@ -239,7 +240,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if (playerHealth <= 0)
+        if (currentHealth <= 0)
         {
             PlayerDeath();
         }
@@ -289,7 +290,7 @@ public class PlayerController : MonoBehaviour
 
     void PlayerDodgeIn()
     {
-        if (dodgeButton && moveVector != Vector3.zero && !isDodge && !isHit && !isColliding)
+        if (dodgeButton && moveVector != Vector3.zero && !isDodge && !isHit)
         {
             dodgeVector = moveVector;
             moveSpeed *= 2;

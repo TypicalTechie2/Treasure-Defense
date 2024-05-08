@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class ChestManager : MonoBehaviour
 {
-    public int ChestMaxHealth;
-    public int ChestCurrentHealth;
+    public int ChestMaxHealth = 100;
+    public int ChestCurrentHealth = 100;
     private Vector3 originalPosition;
     public float vibrateMagnitude = 0.1f;
     public float vibrateDuration = 0.3f;
@@ -18,6 +18,7 @@ public class ChestManager : MonoBehaviour
     private PlayerController playerController;
     private Animator playerAnimation;
     public GameObject chestLight;
+    [SerializeField] private HealthBar healthBar;
 
 
     private void Awake()
@@ -30,7 +31,8 @@ public class ChestManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+        ChestCurrentHealth = ChestMaxHealth;
+        healthBar.SetMaxHealth(ChestMaxHealth);
     }
 
     // Update is called once per frame
@@ -50,6 +52,7 @@ public class ChestManager : MonoBehaviour
             Enemy enemy = other.GetComponent<Enemy>();
 
             ChestCurrentHealth -= enemy.damagePerHit;
+            healthBar.SetHealth(ChestCurrentHealth);
 
             Debug.Log("Current Health: " + ChestCurrentHealth);
 
