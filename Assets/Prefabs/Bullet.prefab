@@ -81,7 +81,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.1
+  m_Radius: 0.2
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!96 &3983218271515177888
 TrailRenderer:
@@ -135,7 +135,7 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0
+        value: 0.15342712
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -143,8 +143,8 @@ TrailRenderer:
         inWeight: 0.33333334
         outWeight: 0.33333334
       - serializedVersion: 3
-        time: 0.7697449
-        value: 0.12753296
+        time: 0.79566956
+        value: 0.2919159
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -208,3 +208,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19f8e67521ee1054f82c76d89d26932a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  damagePerHit: 10

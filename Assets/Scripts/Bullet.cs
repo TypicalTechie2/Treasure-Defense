@@ -5,6 +5,8 @@ using UnityEngine;
 public class Bullet : MonoBehaviour
 {
 
+    public int damagePerHit;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -17,17 +19,9 @@ public class Bullet : MonoBehaviour
 
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.gameObject.tag == "Floor")
-        {
-            Destroy(gameObject);
-        }
-    }
-
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.tag == "Wall")
+        if (other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("Chest") || other.gameObject.CompareTag("Boss"))
         {
             Destroy(gameObject);
         }

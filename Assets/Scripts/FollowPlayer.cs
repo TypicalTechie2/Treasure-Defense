@@ -9,6 +9,12 @@ public class FollowPlayer : MonoBehaviour
     public float xBoundary = 45;
     public float positiveZBoundary = 40;
     public float negativeZBoundary = -80;
+    private PlayerController player;
+
+    private void Awake()
+    {
+        player = GameObject.Find("Player").GetComponent<PlayerController>();
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -19,9 +25,11 @@ public class FollowPlayer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.position = playerTransform.position + playerOffset;
-
-        CameraBoundary();
+        if (player.isGameActive)
+        {
+            transform.position = playerTransform.position + playerOffset;
+            CameraBoundary();
+        }
     }
 
     void CameraBoundary()

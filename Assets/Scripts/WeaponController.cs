@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class WeaponController : MonoBehaviour
@@ -7,8 +8,9 @@ public class WeaponController : MonoBehaviour
     public TrailRenderer bulletTrail;
     public Transform bulletPos;
     public GameObject bullet;
-    public int damagePerHit;
     public float bulletSpeedRate;
+    public float bulletSpeed = 50f;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -21,16 +23,16 @@ public class WeaponController : MonoBehaviour
 
     }
 
-    public void UseBullet()
+    public void UseBullet(Vector3 direction)
     {
-        StartCoroutine(ShootBullet());
+        StartCoroutine(ShootBullet(direction));
     }
 
-    IEnumerator ShootBullet()
+    IEnumerator ShootBullet(Vector3 direction)
     {
-        GameObject spawnedBullet = Instantiate(bullet, bulletPos.position, bullet.transform.rotation);
+        GameObject spawnedBullet = Instantiate(bullet, bulletPos.position, Quaternion.LookRotation(direction));
         Rigidbody bulletRB = spawnedBullet.GetComponent<Rigidbody>();
-        bulletRB.velocity = bulletPos.forward * 50;
+        bulletRB.velocity = direction * bulletSpeed;
 
         yield return null;
     }

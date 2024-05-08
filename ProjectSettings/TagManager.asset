@@ -8,6 +8,11 @@ TagManager:
   - Wall
   - Bullet
   - Enemy
+  - Chest
+  - Enemy Bullet
+  - Boss
+  - PowerUp
+  - Shield
   layers:
   - Default
   - TransparentFX
@@ -19,15 +24,15 @@ TagManager:
   - Player
   - Bullet
   - Enemy
-  - Enemy Dead
+  - Dead
   - Wall
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
+  - Chest
+  - Enemy Bullet
+  - Obstacle
+  - Open Chest
+  - Boss
+  - PowerUp
+  - Shield
   - 
   - 
   - 
