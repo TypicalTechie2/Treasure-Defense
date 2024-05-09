@@ -18,6 +18,9 @@ public class Enemy : MonoBehaviour
     private bool isChasing;
     private PlayerController player;
     private ParticleSystem hitImpact;
+    public AudioSource enemyAudio;
+    public AudioClip deathClip;
+    public AudioClip enemyWalkClip;
 
     private void Awake()
     {
@@ -112,7 +115,10 @@ public class Enemy : MonoBehaviour
             enemyAnimation.SetTrigger("isAttacking");
             isChasing = false;
             gameObject.layer = 10;
-            Destroy(gameObject, 2);
+
+            StartCoroutine(DeathDelay());
+
+            Destroy(gameObject, 1.2f);
 
         }
 
@@ -121,7 +127,10 @@ public class Enemy : MonoBehaviour
             enemyAnimation.SetTrigger("isAttacking");
             isChasing = false;
             gameObject.layer = 10;
-            Destroy(gameObject, 2);
+
+            StartCoroutine(DeathDelay());
+
+            Destroy(gameObject, 1.2f);
         }
     }
 
@@ -132,8 +141,18 @@ public class Enemy : MonoBehaviour
             enemyNavMesh.enabled = false;
             gameObject.layer = 10;
             enemyAnimation.SetTrigger("isAttacking");
-            Destroy(gameObject, 1.5f);
+
+            StartCoroutine(DeathDelay());
+
+            Destroy(gameObject, 1.2f);
         }
+    }
+
+    private IEnumerator DeathDelay()
+    {
+        yield return new WaitForSeconds(0.35f);
+
+        enemyAudio.PlayOneShot(deathClip, 0.3f);
     }
 
     private IEnumerator DetectEnemyHitRoutine()
@@ -143,6 +162,9 @@ public class Enemy : MonoBehaviour
             gameObject.layer = 10;
             enemyAnimation.SetTrigger("isDead");
             enemyNavMesh.enabled = false;
+
+            enemyAudio.PlayOneShot(deathClip, 0.5f);
+
             Destroy(gameObject, 2);
         }
 

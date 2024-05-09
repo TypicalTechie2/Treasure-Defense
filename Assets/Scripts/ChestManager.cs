@@ -93,6 +93,7 @@ public class ChestManager : MonoBehaviour
         gameObject.layer = 10;
         playerController.isGameActive = false;
         playerAnimation.SetTrigger("isDead");
+        playerController.playerAudio.PlayOneShot(playerController.gameOverClip, 1f);
 
         // Rotate the openChest object on the X-axis to -90
         StartCoroutine(ChestVibrate());
@@ -129,6 +130,10 @@ public class ChestManager : MonoBehaviour
 
         // Ensure the camera reaches the exact target position
         playerCameraTransform.position = targetPosition;
+
+        yield return new WaitForSeconds(3);
+
+        playerController.gameOverText.gameObject.SetActive(true);
     }
 
 

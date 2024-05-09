@@ -10,6 +10,8 @@ public class WeaponController : MonoBehaviour
     public GameObject bullet;
     public float bulletSpeedRate;
     public float bulletSpeed = 50f;
+    public AudioSource bulletAudio;
+    public AudioClip fireSound;
 
     // Start is called before the first frame update
     void Start()
@@ -31,6 +33,9 @@ public class WeaponController : MonoBehaviour
     IEnumerator ShootBullet(Vector3 direction)
     {
         GameObject spawnedBullet = Instantiate(bullet, bulletPos.position, Quaternion.LookRotation(direction));
+
+        bulletAudio.PlayOneShot(fireSound, 0.2f);
+
         Rigidbody bulletRB = spawnedBullet.GetComponent<Rigidbody>();
         bulletRB.velocity = direction * bulletSpeed;
 

@@ -1,9 +1,15 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public TMP_Text gameOverText;
+    public AudioClip bossBulletHitClip;
+    public AudioSource playerAudio;
+    public AudioClip playerDamageClip;
+    public AudioClip gameOverClip;
     public GameObject shield;
     public ParticleSystem hitImpact;
     private Rigidbody playerRB;
@@ -39,7 +45,20 @@ public class PlayerController : MonoBehaviour
         weaponController = GetComponentInChildren<WeaponController>();
         playerRB = GetComponentInChildren<Rigidbody>();
         playerMesh = GetComponentsInChildren<MeshRenderer>();
-        chestManager = GameObject.Find("Chest").GetComponent<ChestManager>();
+
+        GameObject chestObject = GameObject.Find("Chest");
+        if (chestObject != null)
+        {
+            chestManager = chestObject.GetComponent<ChestManager>();
+            if (chestManager == null)
+            {
+                Debug.LogError("ChestManager component not found on the Chest GameObject.");
+            }
+        }
+        else
+        {
+            Debug.LogError("Chest GameObject not found.");
+        }
 
     }
     // Start is called before the first frame update
@@ -75,7 +94,6 @@ public class PlayerController : MonoBehaviour
         if (isGameActive)
         {
             FreezeRotation();
-            // AvoidPassingThrough();
         }
 
     }
@@ -124,7 +142,11 @@ public class PlayerController : MonoBehaviour
             }
 
             playerAnimation.SetBool("isRunning", moveVector != Vector3.zero);
+        }
 
+        else
+        {
+            playerAnimation.SetBool("isRunning", false);
         }
     }
 
@@ -153,6 +175,7 @@ public class PlayerController : MonoBehaviour
                 // Apply damage to the player
                 currentHealth -= enemy.damagePerHit;
                 healthBar.SetHealth(currentHealth);
+                playerAudio.PlayOneShot(playerDamageClip, 1f);
 
                 // Optionally, provide visual feedback here
                 StartCoroutine(PlayerDamage());
@@ -165,9 +188,10 @@ public class PlayerController : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Enemy Bullet") && currentHealth > 0)
+        if (other.gameObject.CompareTag("Enemy Bullet") && currentHealth > 0 && isGameActive)
         {
             hitImpact.Play();
+            playerAudio.PlayOneShot(bossBulletHitClip, 1f);
 
             BossWeapon bossWeapon = other.gameObject.GetComponent<BossWeapon>();
 
@@ -249,16 +273,22 @@ public class PlayerController : MonoBehaviour
     private void PlayerDeath()
     {
         isGameActive = false;
+        playerAudio.PlayOneShot(gameOverClip, 1f);
         chestManager.OpenChest();
         playerAnimation.SetTrigger("isDead");
         gameObject.layer = 10;
         StartCoroutine(delaySetActive());
+
     }
 
     private IEnumerator delaySetActive()
     {
         yield return new WaitForSeconds(3f);
         gameObject.SetActive(false);
+
+        yield return new WaitForSeconds(3f);
+
+        gameOverText.gameObject.SetActive(true);
     }
 
 

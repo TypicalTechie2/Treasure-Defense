@@ -1,11 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UIElements;
 
 public class BossController : MonoBehaviour
 {
+    public TMP_Text gameWonText;
+    [SerializeField] private AudioClip bossRoarClip;
+    [SerializeField] private AudioClip groundHitClip;
+    [SerializeField] private AudioSource bossAudio;
+    [SerializeField] private AudioClip bossDeathClip;
     private GameObject bossWeapon;
     [SerializeField] private ParticleSystem hitImpact;
     [SerializeField] private ParticleSystem deathEffect;
@@ -139,6 +145,8 @@ public class BossController : MonoBehaviour
         {
             StartCoroutine(PlayAttackAnimation());
         }
+
+        bossAudio.PlayOneShot(bossRoarClip, 1f);
     }
 
     private IEnumerator PlayAttackAnimation()
@@ -196,17 +204,21 @@ public class BossController : MonoBehaviour
     {
         if (playerController.isGameActive)
         {
-            yield return new WaitForSeconds(1.8f);
+            yield return new WaitForSeconds(1.4f);
+
+            bossAudio.PlayOneShot(groundHitClip, 1f);
+
+            yield return new WaitForSeconds(0.3f);
 
             // Instantiate boss weapon at bossWeaponSpawnPoint position with appropriate rotation
             bossWeapon = Instantiate(bossWeaponPrefab, bossWeaponSpawnPoint.position, Quaternion.identity);
             // Ensure the boss weapon follows the boss rotation
             bossWeapon.transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
-        }
 
-        else
-        {
-            Destroy(gameObject);
+            if (!playerController.isGameActive)
+            {
+                Destroy(bossWeapon);
+            }
         }
     }
 
@@ -215,6 +227,8 @@ public class BossController : MonoBehaviour
         if (currentHealth <= 0)
         {
             playerController.isGameActive = false;
+
+            bossAudio.PlayOneShot(bossDeathClip, 1f);
 
             StartCoroutine(MovePlayerCameraToBoss());
 
@@ -233,6 +247,8 @@ public class BossController : MonoBehaviour
             yield return new WaitForSeconds(0.1f);
 
             gameObject.SetActive(false);
+
+            gameWonText.gameObject.SetActive(true);
         }
     }
 
