@@ -1,12 +1,11 @@
 using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.UIElements;
 
 public class BossController : MonoBehaviour
 {
+    // Serialized fields for inspector visibility
     public TMP_Text gameWonText;
     [SerializeField] private AudioClip bossRoarClip;
     [SerializeField] private AudioClip groundHitClip;
@@ -23,12 +22,11 @@ public class BossController : MonoBehaviour
     [SerializeField] private Transform playerCameraTransform;
     private NavMeshAgent bossNavMesh;
     private Animator bossAnimation;
-    private AnimatorStateInfo currentAnimationState;
     private Rigidbody bossRB;
     private bool isAttacking = false;
     private bool hasSpawnedLavalBall;
     private bool waitForNextAttack = false;
-    private int maxHealth = 1000;
+    [SerializeField] private int maxHealth = 1000;
     [SerializeField] private int currentHealth = 1000;
     [SerializeField] private float cameraMoveDuration = 1f;
     private float timeSinceLastAttack = 0f;
@@ -36,10 +34,13 @@ public class BossController : MonoBehaviour
 
     private void Awake()
     {
+        // Get references to components
         bossAnimation = GetComponent<Animator>();
         bossNavMesh = GetComponent<NavMeshAgent>();
         bossRB = GetComponent<Rigidbody>();
-        playerController = GameObject.Find("Player").GetComponent<PlayerController>();
+        playerController = FindObjectOfType<PlayerController>(); // Use FindObjectOfType instead of GameObject.Find
+        currentHealth = maxHealth; // Initialize currentHealth here
+        healthBar.SetMaxHealth(maxHealth);
 
     }
     // Start is called before the first frame update
@@ -52,76 +53,77 @@ public class BossController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        BossMovement();
-        AttackCoolDown();
+        // If game is active, handle boss movement and attack cooldown
+        if (playerController.isGameActive)
+        {
+            BossMovement();
+            AttackCoolDown();
+        }
+
+        else
+        {
+            GameOver();
+        }
     }
 
+    private void FixedUpdate()
+    {
+        // Freeze boss velocity
+        FreezeBossVelocity();
+    }
+
+    // Method to freeze boss velocity
     private void FreezeBossVelocity()
     {
         if (bossRB != null)
         {
             bossRB.velocity = Vector3.zero;
             bossRB.angularVelocity = Vector3.zero;
-
         }
     }
 
-    private void FixedUpdate()
-    {
-        FreezeBossVelocity();
-    }
-
+    // Method to handle boss movement
     private void BossMovement()
     {
-        if (bossNavMesh.enabled)
+        if (playerController.isGameActive)
         {
-            bossNavMesh.destination = player.position;
-            float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-            if (isAttacking) // Check if the boss is currently attacking
+            // If boss is not attacking and game is active
+            if (bossNavMesh.enabled && !isAttacking) // Add condition to check if not attacking
             {
-                // Check if the attack animation has finished playing
-                currentAnimationState = bossAnimation.GetCurrentAnimatorStateInfo(0);
-                if (!currentAnimationState.IsName("Attack"))
+                // Set destination to player position
+                bossNavMesh.destination = player.position;
+
+                // Calculate distance to player
+                float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+
+                // If distance to player is within stopping distance
+                if (distanceToPlayer <= bossNavMesh.stoppingDistance)
                 {
-                    FinishAttack();
-                }
-                else
-                {
-                    LookTowardsPlayer();
-                }
-            }
-            else if (distanceToPlayer <= bossNavMesh.stoppingDistance)
-            {
-                if (!waitForNextAttack)
-                {
-                    AttackPlayer();
-                    waitForNextAttack = true;
+                    // If not waiting for next attack, initiate attack
+                    if (!waitForNextAttack)
+                    {
+                        AttackPlayer();
+                        waitForNextAttack = true;
+                    }
+                    else
+                    {
+                        // Stop walking animation and look towards player
+                        bossAnimation.SetBool("isWalking", false);
+                        bossAnimation.SetBool("isAttacking", false);
+                        LookTowardsPlayer();
+                    }
                 }
 
-                else
+                // If distance to player is greater than stopping distance, chase player
+                else if (distanceToPlayer > bossNavMesh.stoppingDistance)
                 {
-                    // Idle for a certain duration after attacking
-                    bossAnimation.SetBool("isWalking", false);
-                    bossAnimation.SetBool("isAttacking", false);
-
-                    LookTowardsPlayer();
+                    ChasePlayer();
                 }
-            }
-            else if (distanceToPlayer > bossNavMesh.stoppingDistance)
-            {
-                ChasePlayer();
             }
         }
     }
 
-    private void FinishAttack()
-    {
-        isAttacking = false; // Reset the flag when the attack animation is finished
-        bossNavMesh.isStopped = false; // Allow the boss to move again
-        bossAnimation.SetBool("isAttacking", false);
-    }
-
+    // Method to make boss look towards player
     private void LookTowardsPlayer()
     {
         // Rotate the boss towards the player's direction
@@ -132,38 +134,35 @@ public class BossController : MonoBehaviour
         bossNavMesh.isStopped = true; // Stop the boss from moving while attacking
     }
 
+    // Method to initiate boss attack
     private void AttackPlayer()
     {
-        bossAnimation.SetBool("isWalking", false);
-        bossAnimation.SetBool("isAttacking", true);
-
-        // Set the flag to false at the beginning of the attack sequence
-        waitForNextAttack = false;
-
-        // Check if the boss has already initiated the attack sequence
-        if (!hasSpawnedLavalBall)
+        if (playerController.isGameActive)
         {
-            StartCoroutine(PlayAttackAnimation());
+            bossAnimation.SetBool("isWalking", false);
+            bossAnimation.SetBool("isAttacking", true);
+            waitForNextAttack = false;
+            if (!hasSpawnedLavalBall)
+            {
+                StartCoroutine(PlayAttackAnimation());
+            }
+            bossAudio.PlayOneShot(bossRoarClip, 1f);
         }
 
-        bossAudio.PlayOneShot(bossRoarClip, 1f);
     }
 
+    // Coroutine to play boss attack animation
     private IEnumerator PlayAttackAnimation()
     {
-        // Spawn the boss weapon
         StartCoroutine(InstantiateBossWeapon());
-
         hasSpawnedLavalBall = true;
-
         yield return new WaitForSeconds(3);
-
         bossAnimation.SetBool("isAttacking", false);
         waitForNextAttack = true;
-
         hasSpawnedLavalBall = false;
     }
 
+    // Method to handle attack cooldown
     private void AttackCoolDown()
     {
         if (waitForNextAttack)
@@ -177,44 +176,51 @@ public class BossController : MonoBehaviour
         }
     }
 
+    // Method to chase the player
     private void ChasePlayer()
-    {
-        bossNavMesh.isStopped = false;
-        bossAnimation.SetBool("isWalking", true);
-        bossAnimation.SetBool("isAttacking", false);
-        hasSpawnedLavalBall = false;
-    }
-
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.CompareTag("Bullet"))
-        {
-            Bullet playerBullet = other.GetComponent<Bullet>();
-
-            currentHealth -= playerBullet.damagePerHit;
-            hitImpact.Play();
-
-            healthBar.SetHealth(currentHealth);
-
-            StartCoroutine(BossHitDetect());
-        }
-    }
-
-    private IEnumerator InstantiateBossWeapon()
     {
         if (playerController.isGameActive)
         {
+            bossNavMesh.isStopped = false;
+            bossAnimation.SetBool("isWalking", true);
+            bossAnimation.SetBool("isAttacking", false);
+            hasSpawnedLavalBall = false;
+        }
+    }
+
+    // OnTriggerEnter is called when the Collider other enters the trigger
+    private void OnTriggerEnter(Collider other)
+    {
+        if (playerController.isGameActive)
+        {
+            if (other.gameObject.CompareTag("Bullet"))
+            {
+                // If collided object is bullet, reduce boss health and play hit impact
+                Bullet playerBullet = other.GetComponent<Bullet>();
+                if (playerBullet != null)
+                {
+                    currentHealth -= playerBullet.damagePerHit;
+                    hitImpact.Play();
+                    healthBar.SetHealth(currentHealth);
+                    StartCoroutine(BossHitDetect());
+                }
+            }
+        }
+    }
+
+    // Coroutine to instantiate boss weapon
+    private IEnumerator InstantiateBossWeapon()
+    {
+        if (playerController != null && playerController.isGameActive)
+        {
+            // Delay before spawning boss weapon
             yield return new WaitForSeconds(1.4f);
-
             bossAudio.PlayOneShot(groundHitClip, 1f);
-
             yield return new WaitForSeconds(0.3f);
 
-            // Instantiate boss weapon at bossWeaponSpawnPoint position with appropriate rotation
+            // Instantiate boss weapon at spawn point
             bossWeapon = Instantiate(bossWeaponPrefab, bossWeaponSpawnPoint.position, Quaternion.identity);
-            // Ensure the boss weapon follows the boss rotation
             bossWeapon.transform.rotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
-
             if (!playerController.isGameActive)
             {
                 Destroy(bossWeapon);
@@ -222,62 +228,61 @@ public class BossController : MonoBehaviour
         }
     }
 
+    // Coroutine to handle boss hit detection
     private IEnumerator BossHitDetect()
     {
         if (currentHealth <= 0)
         {
             playerController.isGameActive = false;
-
             bossAudio.PlayOneShot(bossDeathClip, 1f);
-
             StartCoroutine(MovePlayerCameraToBoss());
 
+            // Trigger boss death animation
             bossAnimation.SetTrigger("isDead");
             bossAnimation.SetBool("isWalking", false);
             bossAnimation.SetBool("isAttacking", false);
             bossNavMesh.enabled = false;
+
+            // Change boss layer
             gameObject.layer = 10;
             Destroy(bossWeapon);
-
             yield return new WaitForSeconds(3.5f);
 
+            // Instantiate death effect
             ParticleSystem instantiatedEffect = Instantiate(deathEffect, transform.position, Quaternion.identity);
             instantiatedEffect.Play();
-
             yield return new WaitForSeconds(0.1f);
-
             gameObject.SetActive(false);
-
             gameWonText.gameObject.SetActive(true);
+
+            // Show restart and return to menu buttons
+            playerController.restartButton.gameObject.SetActive(true);
+            playerController.returnToMenuButton.gameObject.SetActive(true);
         }
     }
 
+    // Coroutine to move player camera to boss position
     private IEnumerator MovePlayerCameraToBoss()
     {
-        // Calculate the target position for the camera
         Vector3 targetPosition = new Vector3(transform.position.x, playerCameraTransform.position.y, transform.position.z - 14);
-
-        // Store the initial camera position
         Vector3 initialPosition = playerCameraTransform.position;
-
-        // Duration for the camera movement
         float timeElapsed = 0f;
-
-        // Smoothly move the camera to the boss position
         while (timeElapsed < cameraMoveDuration)
         {
-            // Calculate the interpolation factor
             float t = timeElapsed / cameraMoveDuration;
-
-            // Smoothly move towards the boss position
             playerCameraTransform.position = Vector3.Lerp(initialPosition, targetPosition, t);
-
-            // Increment time
             timeElapsed += Time.deltaTime;
             yield return null;
         }
-
-        // Ensure the camera reaches the exact target position
         playerCameraTransform.position = targetPosition;
+    }
+
+    // Method to handle game over state
+    private void GameOver()
+    {
+        playerController.isGameActive = false;
+        bossAnimation.SetBool("isWalking", false);
+        bossAnimation.SetBool("isAttacking", false);
+        bossNavMesh.enabled = false;
     }
 }

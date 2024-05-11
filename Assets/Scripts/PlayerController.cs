@@ -2,9 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class PlayerController : MonoBehaviour
 {
+    // References to UI elements and audio clips
+    public Button returnToMenuButton;
+    public Button restartButton;
     public TMP_Text gameOverText;
     public AudioClip bossBulletHitClip;
     public AudioSource playerAudio;
@@ -12,6 +16,8 @@ public class PlayerController : MonoBehaviour
     public AudioClip gameOverClip;
     public GameObject shield;
     public ParticleSystem hitImpact;
+
+    // Private variables for player control and stats
     private Rigidbody playerRB;
     private MeshRenderer[] playerMesh;
     private WeaponController weaponController;
@@ -33,7 +39,6 @@ public class PlayerController : MonoBehaviour
     private bool isFireReady;
     private bool isHit;
     public bool isGameActive = true;
-    public bool isGameOver = false;
     public bool hasPowerUp = false;
     private List<Enemy> hitEnemies = new List<Enemy>();
 
@@ -41,6 +46,7 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
+        // Getting references to components and objects
         playerAnimation = GetComponentInChildren<Animator>();
         weaponController = GetComponentInChildren<WeaponController>();
         playerRB = GetComponentInChildren<Rigidbody>();
@@ -64,6 +70,7 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Initializing player health and UI
         currentHealth = maxHealth;
         healthBar.SetMaxHealth(maxHealth);
     }
@@ -71,6 +78,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // Handling player input and actions if the game is active
         if (isGameActive || !chestManager.isChestOpen)
         {
             GetPlayerInput();
@@ -81,25 +89,24 @@ public class PlayerController : MonoBehaviour
             PlayerBoundary();
         }
     }
-
-    private void FreezeRotation()
-    {
-        playerRB.angularVelocity = Vector3.zero;
-        playerRB.velocity = Vector3.zero;
-    }
-
-
     private void FixedUpdate()
     {
+        // Ensuring player rigidbody doesn't rotate unexpectedly
         if (isGameActive)
         {
             FreezeRotation();
         }
-
     }
 
-    void GetPlayerInput()
+    private void FreezeRotation()
+    {
 
+        playerRB.angularVelocity = Vector3.zero;
+        playerRB.velocity = Vector3.zero;
+    }
+
+    // Getting player input
+    void GetPlayerInput()
     {
         if (isGameActive)
         {
@@ -111,10 +118,12 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    // Player movement handling
     void PlayerMovement()
     {
         if (!isHit && isGameActive)
         {
+            // Calculating movement vector
             moveVector = new Vector3(horizontaInput, 0, verticalInput).normalized;
 
             if (isDodge)
@@ -125,8 +134,10 @@ public class PlayerController : MonoBehaviour
                 moveVector = Vector3.zero;
             }
 
+            // Moving the player
             transform.position += moveVector * moveSpeed * Time.deltaTime;
 
+            // Turning the player towards movement direction
             if (Input.GetMouseButton(0))
             {
                 // Get the position of the mouse click in the world space
@@ -141,6 +152,7 @@ public class PlayerController : MonoBehaviour
                 transform.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
             }
 
+            // Triggering run animation
             playerAnimation.SetBool("isRunning", moveVector != Vector3.zero);
         }
 
@@ -150,11 +162,13 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Turning the player towards movement direction
     void PlayerTurnAtPosition()
     {
         transform.LookAt(transform.position + moveVector);
     }
 
+    // Restricting player movement within boundaries
     void PlayerBoundary()
     {
         float clampedX = Mathf.Clamp(transform.position.x, -boundaryLimit, boundaryLimit);
@@ -163,6 +177,7 @@ public class PlayerController : MonoBehaviour
         transform.position = new Vector3(clampedX, transform.position.y, clampedZ);
     }
 
+    // Handling collision with enemies
     private void OnCollisionEnter(Collision other)
     {
         if (other.gameObject.CompareTag("Enemy") && currentHealth > 0)
@@ -186,8 +201,10 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Handling trigger collisions
     private void OnTriggerEnter(Collider other)
     {
+        // Handling collision with enemy bullets
         if (other.gameObject.CompareTag("Enemy Bullet") && currentHealth > 0 && isGameActive)
         {
             hitImpact.Play();
@@ -208,6 +225,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
+        // Handling collision with power-ups
         else if (other.gameObject.CompareTag("PowerUp"))
         {
             Destroy(other.gameObject);
@@ -217,6 +235,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Activating power-up effect
     private IEnumerator ActivatePowerUp()
     {
         hasPowerUp = true;
@@ -242,6 +261,7 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    // Handling player damage
     IEnumerator PlayerDamage()
     {
         isHit = true;
@@ -270,6 +290,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Handling player death
     private void PlayerDeath()
     {
         isGameActive = false;
@@ -281,17 +302,21 @@ public class PlayerController : MonoBehaviour
 
     }
 
+    // Setting game objects inactive after delay
     private IEnumerator delaySetActive()
     {
         yield return new WaitForSeconds(3f);
         gameObject.SetActive(false);
 
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(2f);
 
         gameOverText.gameObject.SetActive(true);
+        restartButton.gameObject.SetActive(true);
+        returnToMenuButton.gameObject.SetActive(true);
     }
 
 
+    // Player attack handling
     void PlayerAttack()
     {
         fireDelay += Time.deltaTime;
@@ -318,6 +343,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Player dodge handling
     void PlayerDodgeIn()
     {
         if (dodgeButton && moveVector != Vector3.zero && !isDodge && !isHit)
@@ -331,6 +357,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    // Resetting dodge effects
     void PlayerDodgeOut()
     {
         moveSpeed *= 0.5f;

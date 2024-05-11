@@ -1,10 +1,8 @@
 using System.Collections;
-using System.Collections.Generic;
-using GLTF.Schema;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -37,13 +35,13 @@ public class GameManager : MonoBehaviour
         {
             StartWave();
         }
-
     }
 
 
     // Update is called once per frame
     void Update()
     {
+        // If the game is active, update the timer and check for power-up instantiation
         if (playerController.isGameActive)
         {
             CountDownTimer();
@@ -54,14 +52,20 @@ public class GameManager : MonoBehaviour
                 StartCoroutine(PowerUpInstantiate());
             }
         }
+
+        // If the game is not active, stop spawning enemies
+        else
+        {
+            spawningEnemies = false; // Stop spawning enemies
+        }
     }
 
+    // Method to handle the countdown timer
     private void CountDownTimer()
     {
 
         if (timerStarted)
         {
-
             // Ensure timer doesn't go below 0
             if (timer < 0)
             {
@@ -81,11 +85,13 @@ public class GameManager : MonoBehaviour
 
             else if (spawningEnemies && timer % 2f <= Time.deltaTime)
             {
+                // Spawn an enemy every 2 seconds
                 SpawnEnemy();
             }
         }
     }
 
+    // Method to start a new wave of Enemies
     private void StartWave()
     {
         timer = 30f;
@@ -97,6 +103,7 @@ public class GameManager : MonoBehaviour
         {
             if (boss != null)
             {
+                // Activate the boss and boss health bar for wave 5
                 boss.SetActive(true);
                 bossHealthBarImage.SetActive(true);
                 timerStarted = false;
@@ -111,19 +118,27 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    // Coroutine to spawn enemies for wave 5
     private IEnumerator SpawnEnemyWave5()
     {
-        while (true)
+        if (playerController.isGameActive)
         {
-            SpawnEnemy();
-            yield return new WaitForSeconds(3f); // Spawn enemies every 3 seconds for wave 5
+            while (true)
+            {
+                // Spawn an enemy every 3 seconds for wave 5
+                SpawnEnemy();
+                yield return new WaitForSeconds(3f); // Spawn enemies every 3 seconds for wave 5
+            }
         }
+
     }
 
+    // Method to check if the wave has ended
     void CheckEndWave()
     {
         if (GameObject.FindGameObjectsWithTag("Enemy").Length == 0)
         {
+            // If no enemies are left, start the next wave
             currentWave++;
             enemyWaveText.text = "Wave " + currentWave;
             if (currentWave <= 5)
@@ -138,11 +153,13 @@ public class GameManager : MonoBehaviour
 
         else
         {
+            // If enemies are still alive, restart the timer and spawning
             timerStarted = true;
             spawningEnemies = true;
         }
     }
 
+    // Method to spawn enemies
     void SpawnEnemy()
     {
         float xPos;
@@ -174,7 +191,8 @@ public class GameManager : MonoBehaviour
                 break;
         }
 
-        if (timer > 9)
+        // Ensure enemies are only spawned if the timer is above 9 seconds and the game is active
+        if (timer > 9 && playerController.isGameActive)
         {
             Vector3 enemyPosition = new Vector3(xPos, enemyPrefab.transform.position.y, zPos);
             GameObject newEnemy = Instantiate(enemyPrefab, enemyPosition, Quaternion.identity);
@@ -183,11 +201,13 @@ public class GameManager : MonoBehaviour
 
             if (enemyNavMesh != null)
             {
+                // Set the speed of enemies based on the current wave
                 enemyNavMesh.speed = initialEnemySpeed + (currentWave - 1) * 0.5f;
             }
         }
     }
 
+    // Coroutine to instantiate power-ups
     private IEnumerator PowerUpInstantiate()
     {
         float xPos;
@@ -219,10 +239,11 @@ public class GameManager : MonoBehaviour
                 break;
         }
 
-        if (!powerUpInstantiated)
+        // Instantiate power-up if not already instantiated and the game is active
+        if (!powerUpInstantiated && playerController.isGameActive)
         {
             powerUpCoroutineRunning = true;
-            yield return new WaitForSeconds(10f);
+            yield return new WaitForSeconds(20);
 
             powerUpInstantiated = true;
             Vector3 powerUpPosition = new Vector3(xPos, transform.position.y, zPos);
@@ -240,5 +261,17 @@ public class GameManager : MonoBehaviour
             powerUpInstantiated = false;
             powerUpCoroutineRunning = false;
         }
+    }
+
+    // Method to restart the game
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(1);
+    }
+
+    // Method to return to the main menu
+    public void ReturnToMenu()
+    {
+        SceneManager.LoadScene(0);
     }
 }
