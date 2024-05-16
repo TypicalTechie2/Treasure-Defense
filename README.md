@@ -8,6 +8,13 @@ Treasure Defense is a strategic defense game I designed and developed with the a
 ## Strategic Defense
 Games that revolve around strategic defense as their core dynamic require the player to think and act strategically in real-time, managing multiple threats and prioritizing actions to protect critical assets. In Treasure Defense, this is demonstrated through a unique balance of defending the treasure and self-preservation.
 
+## Player Controls
+1. **Movement:** Use AWSD or arrow keys to move the player.
+2. **Dodge:** Press Spacebar key to dodge enemies.
+3. **Fire:** Mouse left click to fire.
+    - Note: The player cannot move while firing, adding a strategic twist and enhancing gameplay experience.
+4. **Shield:** Obtain the shield available for a limited time which helps the player defend against enemies and boss bullets.
+
 ## List of Mechanics
 | Name                            | Description                                                                                                                                                                  | Version | Status  |
 |---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|---------|
