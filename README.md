@@ -3,7 +3,7 @@
 **[Play it here!](https://play.unity.com/mg/other/treasure-defense)**
 
 ## About
-Treasure Defense is a strategic defense game I designed and developed with the aim of demonstrating a single core dynamic through fluid tutorialization.
+Treasure Defense is a strategic defense game I designed and developed with the aim of demonstrating a single core dynamic gameplay.
 
 ## Strategic Defense
 Games that revolve around strategic defense as their core dynamic require the player to think and act strategically in real-time, managing multiple threats and prioritizing actions to protect critical assets. In Treasure Defense, this is demonstrated through a unique balance of defending the treasure and self-preservation.
