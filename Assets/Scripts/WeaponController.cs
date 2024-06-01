@@ -11,18 +11,6 @@ public class WeaponController : MonoBehaviour
     public AudioSource bulletAudio;
     public AudioClip fireSound;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     public void UseBullet(Vector3 direction)
     {
         StartCoroutine(ShootBullet(direction));
